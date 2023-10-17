@@ -15,6 +15,9 @@ class OdooRepository<R extends OdooRecord> {
   /// Holds current Odoo records
   List<R> latestRecords = [];
 
+  /// List of fields we need to fetch from Odoo
+  List<String> get oFields => ['id', '__last_update'];
+
   List<dynamic> domain = [
     [1, '=', 1]
   ];
@@ -52,6 +55,9 @@ class OdooRepository<R extends OdooRecord> {
   // Duration in ms for throttling RPC calls
   int throttleDuration = 1000;
 
+  // Frequency in ms for update Records
+  int updateFrequency = 1 * 60 * 1000; // 1 (min) * 60 (sec) * 1000 (mili)
+
   // Tells if throttling is active now
   bool _isThrottling = false;
 
@@ -76,6 +82,73 @@ class OdooRepository<R extends OdooRecord> {
   OdooRepository(this.env) {
     recordStreamController = StreamController<List<R>>.broadcast(
         onListen: startSteam, onCancel: stopStream);
+    if (isAuthenticated) {
+      initialCachePreload();
+    }
+    // updateRecords();
+    Timer(Duration(milliseconds: updateFrequency), () => updateRecords());
+  }
+
+  Future<void> updateRecords() async {
+    /// TODO Must check remote ids compared to local ids, then delete
+    /// local records if not exist remotely
+    if (latestRecords.isNotEmpty && isAuthenticated) {
+      final List<String> lastUpdates =
+          (latestRecords.map((e) => e.lastUpdate) as List<String>);
+      lastUpdates.sort();
+      final String latestUpdate = lastUpdates.last;
+      try {
+        final Map<String, dynamic> response = await env.orpc.callKw({
+          'model': modelName,
+          'method': 'web_search_read',
+          'args': [],
+          'kwargs': {
+            'context': {'bin_size': false},
+            'domain': domain + ['__last_update', '>', latestUpdate],
+            'fields': oFields,
+            // 'limit': limit,
+            // 'offset': offset,
+            'order': order
+          },
+        });
+        for (Map<String, dynamic> item in response['records']) {
+          var values = <String, dynamic>{};
+          final newRecord = createRecordFromJson(item);
+          final oldRecord = latestRecords.firstWhere(
+              (element) => element.id == newRecord.id,
+              orElse: () => newRecord);
+          // Determine what fields were changed
+          final oldRecordJson = oldRecord.toVals();
+          final newRecordJson = newRecord.toVals();
+          for (var k in newRecordJson.keys) {
+            if (oldRecordJson[k] != newRecordJson[k]) {
+              values[k] = newRecordJson[k];
+            }
+          }
+          // write-through cache
+          if (values.isNotEmpty) {
+            final recordIndex = latestRecords
+                .indexWhere((element) => element.id == newRecord.id);
+            if (recordIndex < 0) {
+              latestRecords.insert(0, newRecord);
+            } else {
+              latestRecords[recordIndex] = newRecord;
+            }
+            await cachePut(newRecord);
+            env.logger
+                .d('$modelName: write id=${newRecord.id}, values = `$values`');
+          }
+        }
+        _recordStreamAdd(latestRecords);
+      } on Exception {
+        env.logger.d('$modelName: updateRecords: OdooException}');
+      }
+    } else {
+      if (isAuthenticated) {
+        await fetchRecords();
+      }
+    }
+    Timer(Duration(milliseconds: updateFrequency), () => updateRecords());
   }
 
   /// Enables stream of records fetched
@@ -213,6 +286,22 @@ class OdooRepository<R extends OdooRecord> {
     return cachedRecords;
   }
 
+  void initialCachePreload() {
+    latestRecords = _cachedRecords;
+  }
+
+  /// Get records from local cache and trigger remote fetch if not throttling
+  Future<List<R>> get recordsAwaitedCall async {
+    latestRecords = _cachedRecords;
+    env.logger.d(
+        '$modelName: Got ${latestRecords.length.toString()} records from cache.');
+    await fetchRecords();
+    _isThrottling = true;
+    Timer(
+        Duration(milliseconds: throttleDuration), () => _isThrottling = false);
+    return latestRecords;
+  }
+
   /// Get records from local cache and trigger remote fetch if not throttling
   List<R> get records {
     latestRecords = _cachedRecords;
@@ -240,7 +329,7 @@ class OdooRepository<R extends OdooRecord> {
         'kwargs': {
           'context': {'bin_size': true},
           'domain': domain,
-          'fields': OdooRecord.oFields,
+          'fields': oFields,
           'limit': limit,
           'offset': offset,
           'order': order
@@ -250,13 +339,15 @@ class OdooRepository<R extends OdooRecord> {
       return response['records'] as List<dynamic>;
     } on Exception {
       remoteRecordsCount = 0;
-      return [];
+      throw Exception(
+          'Something weird just happened! Could not retrieve data.');
+      // return []; // Returning [] will erase whole cache
     }
   }
 
   /// Must be overridden to create real record from json
   R createRecordFromJson(Map<String, dynamic> json) {
-    return OdooRecord(0) as R;
+    return OdooRecord(0, '') as R;
   }
 
   /// Sends given list of records to a stream if there are listeners
@@ -288,6 +379,9 @@ class OdooRepository<R extends OdooRecord> {
         latestRecords = freshRecords;
         _recordStreamAdd(latestRecords);
       }
+      while (canLoadMore) {
+        await cacheMoreRecords();
+      }
     } on Exception {
       env.logger.d('$modelName: frontend_get_requests: OdooException}');
     }
@@ -296,7 +390,7 @@ class OdooRepository<R extends OdooRecord> {
   /// Fetches more records from remote and adds them to list of cached records.
   /// Supposed to be used with list views.
   Future<void> cacheMoreRecords() async {
-    if (isLoadingMore) return;
+    if (isLoadingMore || !canLoadMore) return;
     isLoadingMore = true;
     offset += limit;
     try {
@@ -398,6 +492,7 @@ class OdooRepository<R extends OdooRecord> {
     } else {
       latestRecords[recordIndex] = newRecord;
     }
+    await cachePut(newRecord);
     env.logger.d('$modelName: write id=${newRecord.id}, values = `$values`');
     await execute(
         recordId: newRecord.id,
