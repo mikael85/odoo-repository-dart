@@ -94,7 +94,7 @@ class OdooRepository<R extends OdooRecord> {
     /// local records if not exist remotely
     if (latestRecords.isNotEmpty && isAuthenticated) {
       final List<String> lastUpdates =
-          (latestRecords.map((e) => e.lastUpdate) as List<String>);
+          latestRecords.map((e) => e.lastUpdate).toList();
       lastUpdates.sort();
       final String latestUpdate = lastUpdates.last;
       try {
