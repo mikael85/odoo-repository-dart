@@ -104,7 +104,10 @@ class OdooRepository<R extends OdooRecord> {
           'args': [],
           'kwargs': {
             'context': {'bin_size': false},
-            'domain': domain + ['__last_update', '>', latestUpdate],
+            'domain': domain +
+                [
+                  ['__last_update', '>', latestUpdate]
+                ],
             'fields': oFields,
             // 'limit': limit,
             // 'offset': offset,
