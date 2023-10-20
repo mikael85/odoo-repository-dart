@@ -114,6 +114,7 @@ class OdooRepository<R extends OdooRecord> {
             'order': order
           },
         });
+        var needsUpdate = false;
         for (Map<String, dynamic> item in response['records']) {
           var values = <String, dynamic>{};
           final newRecord = createRecordFromJson(item);
@@ -140,9 +141,10 @@ class OdooRepository<R extends OdooRecord> {
             await cachePut(newRecord);
             env.logger
                 .d('$modelName: write id=${newRecord.id}, values = `$values`');
+            needsUpdate = true;
           }
         }
-        _recordStreamAdd(latestRecords);
+        if (needsUpdate) _recordStreamAdd(latestRecords);
       } on Exception {
         env.logger.d('$modelName: updateRecords: OdooException}');
       }
