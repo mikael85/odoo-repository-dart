@@ -323,14 +323,15 @@ class OdooRepository<R extends OdooRecord> {
   /// Must set [remoteRecordsCount]
   /// Read operation is issued without call queue as it is idempotent.
   /// Many repositories can call own searchRead concurrently.
-  Future<List<dynamic>> searchRead() async {
+  Future<List<dynamic>> searchRead(
+      {Map<String, dynamic> context = const {}}) async {
     try {
       final Map<String, dynamic> response = await env.orpc.callKw({
         'model': modelName,
         'method': 'web_search_read',
         'args': [],
         'kwargs': {
-          'context': {'bin_size': true},
+          'context': context,
           'domain': domain,
           'fields': oFields,
           'limit': limit,
