@@ -106,7 +106,7 @@ class OdooRepository<R extends OdooRecord> {
             'context': {'bin_size': false},
             'domain': domain +
                 [
-                  ['__last_update', '>', latestUpdate]
+                  ['write_date', '>', latestUpdate]
                 ],
             'fields': oFields,
             // 'limit': limit,
@@ -139,8 +139,8 @@ class OdooRepository<R extends OdooRecord> {
               latestRecords[recordIndex] = newRecord;
             }
             await cachePut(newRecord);
-            env.logger
-                .d('$modelName: write id=${newRecord.id}, values = `$values`');
+            // env.logger
+            //     .d('$modelName: write id=${newRecord.id}, values = `$values`');
             needsUpdate = true;
           }
         }
