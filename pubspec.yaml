@@ -10,9 +10,9 @@ environment:
 dependencies:
   equatable: ^2.0.3
   odoo_rpc: ^0.5.2
-  logger: ^1.0.0
+  logger: ^2.2.0
   crypto: ^3.0.0
-  lints: ^2.1.1
+  lints: ^3.0.0
   mutex: ^3.0.0
 
 dev_dependencies:
