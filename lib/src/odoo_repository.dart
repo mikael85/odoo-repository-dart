@@ -388,8 +388,9 @@ class OdooRepository<R extends OdooRecord> {
       while (canLoadMore) {
         await cacheMoreRecords();
       }
-    } on Exception {
-      env.logger.d('$modelName: frontend_get_requests: OdooException}');
+    } on Exception catch (e, stackTrace) {
+      env.logger
+          .d('$modelName: fetchRecords error: $e\nStack trace: $stackTrace');
     }
   }
 
