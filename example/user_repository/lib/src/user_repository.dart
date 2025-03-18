@@ -83,7 +83,7 @@ class UserRepository extends OdooRepository<User> {
   // Need to override searchRead because we are computing image url
   // and constructing domain based on latest used id found in session.
   @override
-  Future<List<dynamic>> searchRead() async {
+  Future<List<dynamic>> searchRead({Map<String, dynamic>? context}) async {
     var publicUserJson = User.publicUser().toJson();
     if (!isAuthenticated) {
       return [publicUserJson];
@@ -95,7 +95,7 @@ class UserRepository extends OdooRepository<User> {
         'method': 'search_read',
         'args': [],
         'kwargs': {
-          'context': {'bin_size': true},
+          'context': {...?context, 'bin_size': true},
           'domain': [
             ['id', '=', userId]
           ],

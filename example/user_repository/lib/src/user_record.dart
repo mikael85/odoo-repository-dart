@@ -87,8 +87,12 @@ class User extends Equatable implements OdooRecord {
 
   // List of fields we need to fetch
   static List<String> get oFields =>
-      ['id', 'partner_id', 'login', 'name', 'lang', '__last_update'];
+      ['id', 'partner_id', 'login', 'name', 'lang', 'write_date'];
 
   @override
   String toString() => 'User[$id]: $name ($login)';
+
+  @override
+  // TODO: implement lastUpdate
+  String get lastUpdate => throw UnimplementedError();
 }
