@@ -145,8 +145,9 @@ class OdooRepository<R extends OdooRecord> {
           }
         }
         if (needsUpdate) _recordStreamAdd(latestRecords);
-      } on Exception {
-        env.logger.d('$modelName: updateRecords: OdooException}');
+      } on Exception catch (e, stackTrace) {
+        env.logger
+            .d('$modelName: updateRecords error: $e\nStack trace: $stackTrace');
       }
     } else {
       if (isAuthenticated) {
@@ -343,7 +344,9 @@ class OdooRepository<R extends OdooRecord> {
       });
       remoteRecordsCount = response['length'] as int;
       return response['records'] as List<dynamic>;
-    } on Exception {
+    } on Exception catch (e, stackTrace) {
+      env.logger
+          .d('$modelName: searchRead error: $e\nStack trace: $stackTrace');
       remoteRecordsCount = 0;
       throw Exception(
           'Something weird just happened! Could not retrieve data.');
@@ -415,9 +418,10 @@ class OdooRepository<R extends OdooRecord> {
           .put(recordIdsCacheKey, cachedRecords.map((e) => e.id).toList());
       latestRecords = cachedRecords;
       _recordStreamAdd(latestRecords);
-    } on Exception {
+    } on Exception catch (e, stackTrace) {
+      env.logger.d(
+          '$modelName: cacheMoreRecords error: $e\nStack trace: $stackTrace');
       isLoadingMore = false;
-      env.logger.d('$modelName: frontend_get_requests: OdooException}');
     }
   }
 

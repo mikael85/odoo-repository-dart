@@ -119,7 +119,9 @@ class UserRepository extends OdooRepository<User> {
       return res;
     } on OdooSessionExpiredException {
       return [publicUserJson];
-    } on Exception {
+    } on Exception catch (e, stackTrace) {
+      env.logger
+          .d('$modelName: searchRead error: $e\nStack trace: $stackTrace');
       return [];
     }
   }
