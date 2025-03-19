@@ -342,6 +342,7 @@ class OdooRepository<R extends OdooRecord> {
           'order': order
         },
       });
+      env.logger.d('$modelName: searchRead response:\n $response');
       remoteRecordsCount = response['length'] as int;
       return response['records'] as List<dynamic>;
     } on Exception catch (e, stackTrace) {
