@@ -108,7 +108,7 @@ class UserRepository extends OdooRepository<User> {
         final imageField = env.orpc.sessionId!.serverVersionInt >= 13
             ? 'image_128'
             : 'image_small';
-        var unique = res[0]['__last_update'] as String;
+        var unique = res[0]['write_date'] as String;
         unique = unique.replaceAll(RegExp(r'[^0-9]'), '');
         avatarUrl =
             '${env.orpc.baseURL}/web/image?model=$modelName&field=$imageField&id=$userId&unique=$unique';
