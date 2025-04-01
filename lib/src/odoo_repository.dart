@@ -16,7 +16,7 @@ class OdooRepository<R extends OdooRecord> {
   List<R> latestRecords = [];
 
   /// List of fields we need to fetch from Odoo
-  List<String> get oFields => ['id', '__last_update'];
+  List<String> get oFields => ['id', 'write_date'];
 
   List<dynamic> domain = [
     [1, '=', 1]

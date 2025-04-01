@@ -7,20 +7,20 @@ class OdooRecord {
   /// In opposite to [toJson()] it should represent relational fields as integer
   /// instad of tuple (id, name).
   Map<String, dynamic> toVals() {
-    return {'id': id, '__last_update': lastUpdate};
+    return {'id': id, 'write_date': lastUpdate};
   }
 
   /// Creates JSON from [OdooRecord] compatible with [fromJson].
   /// Used to cache records.
   Map<String, dynamic> toJson() {
     // keys must match odoo field names
-    return {'id': id, '__last_update': lastUpdate};
+    return {'id': id, 'write_date': lastUpdate};
   }
 
   /// Creates [OdooRecord] from JSON returned by search_read() or cache.
   static OdooRecord fromJson(Map<String, Object> json) {
     // keys must match odoo field names
-    return OdooRecord(json['id'] as int, json['__last_update'] as String);
+    return OdooRecord(json['id'] as int, json['write_date'] as String);
   }
 
   /// Deprecated. static properties can not be inherited by children
