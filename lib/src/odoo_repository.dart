@@ -92,7 +92,6 @@ class OdooRepository<R extends OdooRecord> {
       initialCachePreload();
     }
     // updateRecords();
-    Timer(Duration(milliseconds: updateFrequency), () => updateRecords());
     startUpdateTimer();
   }
 
@@ -174,7 +173,7 @@ class OdooRepository<R extends OdooRecord> {
         await fetchRecords();
       }
     }
-    Timer(Duration(milliseconds: updateFrequency), () => updateRecords());
+    // Timer(Duration(milliseconds: updateFrequency), () => updateRecords());
   }
 
   /// Enables stream of records fetched
