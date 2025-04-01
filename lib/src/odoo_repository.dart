@@ -61,6 +61,12 @@ class OdooRepository<R extends OdooRecord> {
   // Tells if throttling is active now
   bool _isThrottling = false;
 
+  /// Timer for updating records
+  Timer? _updateTimer;
+
+  /// Tells if update timer is active
+  bool get isUpdateTimerActive => _updateTimer?.isActive ?? false;
+
   /// Holds list of all repositories
   late final OdooEnvironment env;
 
@@ -87,6 +93,20 @@ class OdooRepository<R extends OdooRecord> {
     }
     // updateRecords();
     Timer(Duration(milliseconds: updateFrequency), () => updateRecords());
+    startUpdateTimer();
+  }
+
+  /// Inicia el timer para actualizar registros periódicamente
+  void startUpdateTimer() {
+    stopUpdateTimer(); // Asegura que no haya otro timer activo
+    _updateTimer = Timer.periodic(
+        Duration(milliseconds: updateFrequency), (_) => updateRecords());
+  }
+
+  /// Detiene el timer de actualización si está activo
+  void stopUpdateTimer() {
+    _updateTimer?.cancel();
+    _updateTimer = null;
   }
 
   Future<void> updateRecords() async {
