@@ -94,7 +94,7 @@ class OdooRepository<R extends OdooRecord> {
       initialCachePreload();
     }
     // updateRecords();
-    startUpdateTimer();
+    // startUpdateTimer();
   }
 
   /// Inicia el timer para actualizar registros periódicamente
