@@ -58,6 +58,8 @@ class OdooRepository<R extends OdooRecord> {
   // Frequency in ms for update Records
   int updateFrequency = 1 * 60 * 1000; // 1 (min) * 60 (sec) * 1000 (mili)
 
+  Duration syncDuration = const Duration(minutes: 1);
+
   // Tells if throttling is active now
   bool _isThrottling = false;
 

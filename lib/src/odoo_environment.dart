@@ -35,6 +35,40 @@ class OdooEnvironment {
   final _registry = <OdooRepository>[];
   final models = <String, OdooRepository>{};
 
+  /// Holds a list of Timers by its Model duration
+  final Map<OdooRepository, Timer> _syncTimers = {};
+
+  /// Stops PeriodicSync of all repositories and clears the timers
+  void stopAllSync() {
+    for (final timer in _syncTimers.values) {
+      timer.cancel();
+    }
+    _syncTimers.clear();
+  }
+
+  /// Starts PeriodicSync of all repositories
+  /// THIS IS NOT NECESARY
+  void startPeriodicSync() {
+    stopAllSync();
+    for (final repo in _registry) {
+      if (_syncTimers[repo] == null) {
+        _syncTimers[repo] = Timer.periodic(repo.syncDuration, (_) {
+          repo.updateRecords();
+        });
+      }
+    }
+  }
+
+  Future<void> syncAllNow() async {
+    for (final repo in _registry) {
+      try {
+        await repo.updateRecords();
+      } catch (e) {
+        logger.e('Error while syncing ${repo.modelName}: $e');
+      }
+    }
+  }
+
   OdooEnvironment(this.orpc, this.dbName, this.cache, this.netConnectivity)
       : callsLock = ReadWriteMutex(),
         logger = Logger() {
@@ -54,6 +88,9 @@ class OdooEnvironment {
     if (!_registry.contains(repo)) {
       _registry.add(repo);
       models[repo.modelName] = repo;
+      _syncTimers[repo] = Timer.periodic(repo.syncDuration, (_) {
+        repo.updateRecords();
+      });
     }
     return repo;
   }
