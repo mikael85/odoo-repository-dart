@@ -60,13 +60,14 @@ class OdooEnvironment {
   }
 
   Future<void> syncAllNow() async {
-    for (final repo in _registry) {
-      try {
-        await repo.updateRecords();
-      } catch (e) {
-        logger.e('Error while syncing ${repo.modelName}: $e');
-      }
-    }
+    // for (final repo in _registry) {
+    //   try {
+    //     await repo.updateRecords();
+    //   } catch (e) {
+    //     logger.e('Error while syncing ${repo.modelName}: $e');
+    //   }
+    // }
+    await _processCallQueue();
   }
 
   OdooEnvironment(this.orpc, this.dbName, this.cache, this.netConnectivity)
